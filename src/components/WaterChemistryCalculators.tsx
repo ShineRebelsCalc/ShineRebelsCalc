@@ -1,6 +1,109 @@
 import React, { useState } from 'react';
-import { Droplet, TestTube, Beaker, FlaskRound } from 'lucide-react';
+import { Droplet, TestTube, Beaker, FlaskRound, MapPin } from 'lucide-react';
 import CalculatorCard from './CalculatorCard';
+
+interface WaterProfile {
+  name: string;
+  location: string;
+  calcium: number;
+  magnesium: number;
+  sodium: number;
+  sulfate: number;
+  chloride: number;
+  bicarbonate: number;
+  description: string;
+}
+
+const WATER_PROFILES: WaterProfile[] = [
+  {
+    name: 'Pilsen',
+    location: 'Czech Republic',
+    calcium: 7,
+    magnesium: 2,
+    sodium: 2,
+    sulfate: 5,
+    chloride: 5,
+    bicarbonate: 15,
+    description: 'Very soft water, ideal for Pilsners and light lagers'
+  },
+  {
+    name: 'Burton on Trent',
+    location: 'England',
+    calcium: 295,
+    magnesium: 45,
+    sodium: 55,
+    sulfate: 725,
+    chloride: 25,
+    bicarbonate: 300,
+    description: 'Hard water with high sulfate, perfect for IPAs and pale ales'
+  },
+  {
+    name: 'Dublin',
+    location: 'Ireland',
+    calcium: 115,
+    magnesium: 4,
+    sodium: 12,
+    sulfate: 55,
+    chloride: 19,
+    bicarbonate: 319,
+    description: 'High bicarbonate, excellent for stouts and dark beers'
+  },
+  {
+    name: 'Dortmund',
+    location: 'Germany',
+    calcium: 225,
+    magnesium: 40,
+    sodium: 60,
+    sulfate: 120,
+    chloride: 60,
+    bicarbonate: 220,
+    description: 'Moderately hard water, great for export lagers'
+  },
+  {
+    name: 'Munich',
+    location: 'Germany',
+    calcium: 75,
+    magnesium: 18,
+    sodium: 2,
+    sulfate: 10,
+    chloride: 2,
+    bicarbonate: 150,
+    description: 'Moderately soft with carbonate, ideal for Dunkel and Märzen'
+  },
+  {
+    name: 'Vienna',
+    location: 'Austria',
+    calcium: 200,
+    magnesium: 60,
+    sodium: 8,
+    sulfate: 125,
+    chloride: 12,
+    bicarbonate: 120,
+    description: 'Moderate hardness, suited for Vienna lagers and Amber beers'
+  },
+  {
+    name: 'London',
+    location: 'England',
+    calcium: 90,
+    magnesium: 4,
+    sodium: 20,
+    sulfate: 40,
+    chloride: 40,
+    bicarbonate: 104,
+    description: 'Balanced profile, good for bitters and milds'
+  },
+  {
+    name: 'Edinburgh',
+    location: 'Scotland',
+    calcium: 125,
+    magnesium: 25,
+    sodium: 55,
+    sulfate: 140,
+    chloride: 65,
+    bicarbonate: 225,
+    description: 'Well-suited for Scottish ales and strong ales'
+  }
+];
 
 interface pHAdjustmentInputs {
   currentPH: string;
@@ -155,9 +258,68 @@ function WaterChemistryCalculators() {
   const blendingResults = calculateBlending();
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-      {/* pH Adjustment Calculator */}
-      <CalculatorCard
+    <div className="space-y-8">
+      {/* Water Profiles Section */}
+      <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-2xl p-6 border border-blue-100">
+        <div className="flex items-center gap-3 mb-6">
+          <MapPin className="w-6 h-6 text-blue-600" />
+          <h2 className="text-2xl font-bold text-gray-800">Classic Water Profiles</h2>
+        </div>
+        <p className="text-gray-600 mb-6">
+          Famous brewing water profiles from around the world. Use these as reference for crafting traditional beer styles.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {WATER_PROFILES.map((profile) => (
+            <div
+              key={profile.name}
+              className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all border border-gray-200"
+            >
+              <div className="mb-3">
+                <h3 className="text-lg font-bold text-gray-800">{profile.name}</h3>
+                <p className="text-sm text-gray-500">{profile.location}</p>
+              </div>
+              <p className="text-sm text-gray-600 mb-4 min-h-[40px]">{profile.description}</p>
+              <div className="space-y-2 text-xs">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-blue-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">Ca</span>
+                    <span className="text-gray-600 ml-1">{profile.calcium} ppm</span>
+                  </div>
+                  <div className="bg-green-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">Mg</span>
+                    <span className="text-gray-600 ml-1">{profile.magnesium} ppm</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-yellow-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">Na</span>
+                    <span className="text-gray-600 ml-1">{profile.sodium} ppm</span>
+                  </div>
+                  <div className="bg-orange-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">SO₄</span>
+                    <span className="text-gray-600 ml-1">{profile.sulfate} ppm</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-teal-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">Cl</span>
+                    <span className="text-gray-600 ml-1">{profile.chloride} ppm</span>
+                  </div>
+                  <div className="bg-slate-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">HCO₃</span>
+                    <span className="text-gray-600 ml-1">{profile.bicarbonate} ppm</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Calculators Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* pH Adjustment Calculator */}
+        <CalculatorCard
         title="pH Adjustment"
         description="Calculate acid additions to adjust mash pH"
         icon={<TestTube className="w-6 h-6 text-blue-600" />}
@@ -439,6 +601,7 @@ function WaterChemistryCalculators() {
           </div>
         </div>
       </CalculatorCard>
+      </div>
     </div>
   );
 }
