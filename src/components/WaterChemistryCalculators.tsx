@@ -167,23 +167,84 @@ function WaterChemistryCalculators() {
     );
   }
 
+  const brewingProfiles = WATER_PROFILES.filter(p => p.category === 'brewing');
+  const distillationProfiles = WATER_PROFILES.filter(p => p.category === 'distillation');
+
   return (
     <div className="space-y-8">
-      {/* Water Profiles Section */}
+      {/* Brewing Water Profiles Section */}
       <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-2xl p-6 border border-blue-100">
         <div className="flex items-center gap-3 mb-6">
           <MapPin className="w-6 h-6 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-800">Classic Water Profiles</h2>
+          <h2 className="text-2xl font-bold text-gray-800">Classic Brewing Water Profiles</h2>
         </div>
         <p className="text-gray-600 mb-6">
           Famous brewing water profiles from around the world. Use these as reference for crafting traditional beer styles.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {WATER_PROFILES.map((profile) => (
+          {brewingProfiles.map((profile) => (
             <div
               key={profile.name}
               onClick={() => setSelectedProfile(profile)}
               className="bg-white rounded-xl p-5 shadow-sm hover:shadow-lg transition-all border border-gray-200 cursor-pointer hover:border-blue-300 hover:scale-105 transform duration-200"
+            >
+              <div className="mb-3">
+                <h3 className="text-lg font-bold text-gray-800">{profile.name}</h3>
+                <p className="text-sm text-gray-500">{profile.location}</p>
+              </div>
+              <p className="text-sm text-gray-600 mb-4 min-h-[40px]">{profile.description}</p>
+              <div className="space-y-2 text-xs">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-blue-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">Ca</span>
+                    <span className="text-gray-600 ml-1">{profile.calcium} ppm</span>
+                  </div>
+                  <div className="bg-green-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">Mg</span>
+                    <span className="text-gray-600 ml-1">{profile.magnesium} ppm</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-yellow-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">Na</span>
+                    <span className="text-gray-600 ml-1">{profile.sodium} ppm</span>
+                  </div>
+                  <div className="bg-orange-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">SO₄</span>
+                    <span className="text-gray-600 ml-1">{profile.sulfate} ppm</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-teal-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">Cl</span>
+                    <span className="text-gray-600 ml-1">{profile.chloride} ppm</span>
+                  </div>
+                  <div className="bg-slate-50 rounded px-2 py-1">
+                    <span className="font-medium text-gray-700">HCO₃</span>
+                    <span className="text-gray-600 ml-1">{profile.bicarbonate} ppm</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Distillation Water Profiles Section */}
+      <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-100">
+        <div className="flex items-center gap-3 mb-6">
+          <MapPin className="w-6 h-6 text-orange-600" />
+          <h2 className="text-2xl font-bold text-gray-800">Distillation Mash Water Profiles</h2>
+        </div>
+        <p className="text-gray-600 mb-6">
+          Optimized water profiles for distillation mashes. Select a profile to match your spirit production goals.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {distillationProfiles.map((profile) => (
+            <div
+              key={profile.name}
+              onClick={() => setSelectedProfile(profile)}
+              className="bg-white rounded-xl p-5 shadow-sm hover:shadow-lg transition-all border border-gray-200 cursor-pointer hover:border-orange-300 hover:scale-105 transform duration-200"
             >
               <div className="mb-3">
                 <h3 className="text-lg font-bold text-gray-800">{profile.name}</h3>
