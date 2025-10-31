@@ -1,7 +1,3 @@
-import Database from 'better-sqlite3';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-
 export interface User {
   id: number;
   email: string;
@@ -19,79 +15,110 @@ export interface UserSession {
 }
 
 class AuthDatabase {
-  private db: Database.Database;
-  private JWT_SECRET = 'brewing-calculator-secret-key-2024';
+  private STORAGE_KEY = 'brewing_calc_users';
+  private SESSION_KEY = 'brewing_calc_session';
 
   constructor() {
-    this.db = new Database('users.db');
     this.initializeDatabase();
     this.createDemoAccount();
   }
 
   private initializeDatabase() {
-    // Create users table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        name TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        is_demo BOOLEAN DEFAULT FALSE
-      )
-    `);
+    // Initialize localStorage if it doesn't exist
+    if (!localStorage.getItem(this.STORAGE_KEY)) {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify([]));
+    }
+  }
 
-    // Create user_profiles table for future use
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS user_profiles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        profile_name TEXT NOT NULL,
-        profile_data TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-      )
-    `);
+  private getUsers(): User[] {
+    const users = localStorage.getItem(this.STORAGE_KEY);
+    return users ? JSON.parse(users) : [];
+  }
+
+  private saveUsers(users: User[]) {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(users));
+  }
+
+  private hashPassword(password: string): string {
+    // Simple hash function for demo purposes
+    // In production, use a proper hashing library
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+      const char = password.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return hash.toString();
+  }
+
+  private verifyPassword(password: string, hashedPassword: string): boolean {
+    return this.hashPassword(password) === hashedPassword;
+  }
+
+  private generateToken(user: UserSession): string {
+    // Simple token generation for demo purposes
+    const tokenData = {
+      ...user,
+      timestamp: Date.now(),
+      expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
+    };
+    return btoa(JSON.stringify(tokenData));
   }
 
   private createDemoAccount() {
+    const users = this.getUsers();
     const demoEmail = 'demo@brewingcalc.com';
-    const existingDemo = this.db.prepare('SELECT id FROM users WHERE email = ?').get(demoEmail);
+    const existingDemo = users.find(user => user.email === demoEmail);
     
     if (!existingDemo) {
-      const hashedPassword = bcrypt.hashSync('demo123', 10);
-      this.db.prepare(`
-        INSERT INTO users (email, password, name, is_demo)
-        VALUES (?, ?, ?, ?)
-      `).run(demoEmail, hashedPassword, 'Demo User', true);
+      const hashedPassword = this.hashPassword('demo123');
+      const demoUser: User = {
+        id: Date.now(),
+        email: demoEmail,
+        password: hashedPassword,
+        name: 'Demo User',
+        created_at: new Date().toISOString(),
+        is_demo: true
+      };
+      users.push(demoUser);
+      this.saveUsers(users);
     }
   }
 
   async register(email: string, password: string, name: string): Promise<{ success: boolean; message: string; user?: UserSession }> {
     try {
+      const users = this.getUsers();
+      
       // Check if user already exists
-      const existingUser = this.db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+      const existingUser = users.find(user => user.email === email);
       if (existingUser) {
         return { success: false, message: 'User already exists with this email' };
       }
 
       // Hash password
-      const hashedPassword = bcrypt.hashSync(password, 10);
+      const hashedPassword = this.hashPassword(password);
 
-      // Insert new user
-      const result = this.db.prepare(`
-        INSERT INTO users (email, password, name)
-        VALUES (?, ?, ?)
-      `).run(email, hashedPassword, name);
-
-      const user: UserSession = {
-        id: result.lastInsertRowid as number,
+      // Create new user
+      const newUser: User = {
+        id: Date.now(),
         email,
+        password: hashedPassword,
         name,
+        created_at: new Date().toISOString(),
         is_demo: false
       };
 
-      return { success: true, message: 'User registered successfully', user };
+      users.push(newUser);
+      this.saveUsers(users);
+
+      const userSession: UserSession = {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        is_demo: newUser.is_demo
+      };
+
+      return { success: true, message: 'User registered successfully', user: userSession };
     } catch (error) {
       return { success: false, message: 'Registration failed' };
     }
@@ -99,13 +126,14 @@ class AuthDatabase {
 
   async login(email: string, password: string): Promise<{ success: boolean; message: string; user?: UserSession; token?: string }> {
     try {
-      const user = this.db.prepare('SELECT * FROM users WHERE email = ?').get(email) as User;
+      const users = this.getUsers();
+      const user = users.find(u => u.email === email);
       
       if (!user) {
         return { success: false, message: 'Invalid email or password' };
       }
 
-      const isValidPassword = bcrypt.compareSync(password, user.password);
+      const isValidPassword = this.verifyPassword(password, user.password);
       if (!isValidPassword) {
         return { success: false, message: 'Invalid email or password' };
       }
@@ -117,7 +145,7 @@ class AuthDatabase {
         is_demo: user.is_demo
       };
 
-      const token = jwt.sign(userSession, this.JWT_SECRET, { expiresIn: '7d' });
+      const token = this.generateToken(userSession);
 
       return { 
         success: true, 
@@ -136,8 +164,19 @@ class AuthDatabase {
 
   verifyToken(token: string): UserSession | null {
     try {
-      const decoded = jwt.verify(token, this.JWT_SECRET) as UserSession;
-      return decoded;
+      const tokenData = JSON.parse(atob(token));
+      
+      // Check if token is expired
+      if (Date.now() > tokenData.expires) {
+        return null;
+      }
+
+      return {
+        id: tokenData.id,
+        email: tokenData.email,
+        name: tokenData.name,
+        is_demo: tokenData.is_demo
+      };
     } catch (error) {
       return null;
     }
@@ -145,7 +184,8 @@ class AuthDatabase {
 
   getUserById(id: number): User | null {
     try {
-      return this.db.prepare('SELECT * FROM users WHERE id = ?').get(id) as User;
+      const users = this.getUsers();
+      return users.find(user => user.id === id) || null;
     } catch (error) {
       return null;
     }
