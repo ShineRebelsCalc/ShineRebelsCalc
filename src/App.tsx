@@ -10,8 +10,8 @@ import WaterChemistryCalculators from './components/WaterChemistryCalculators';
 type TabType = 'brewing' | 'distillation' | 'water';
 
 function AppContent() {
-  const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>('brewing');
+  const { user, settings, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState<TabType>(settings?.display?.defaultTab || 'brewing');
 
   if (loading) {
     return (
@@ -27,6 +27,13 @@ function AppContent() {
   if (!user) {
     return <AuthScreen />;
   }
+
+  // Update active tab when settings change
+  React.useEffect(() => {
+    if (settings?.display?.defaultTab && activeTab !== settings.display.defaultTab) {
+      setActiveTab(settings.display.defaultTab);
+    }
+  }, [settings?.display?.defaultTab]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">

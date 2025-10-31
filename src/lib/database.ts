@@ -14,12 +14,48 @@ export interface UserSession {
   is_demo: boolean;
 }
 
+export interface UserSettings {
+  id: string;
+  userId: number;
+  units: {
+    volume: 'liters' | 'gallons';
+    weight: 'grams' | 'ounces';
+    temperature: 'celsius' | 'fahrenheit';
+    pressure: 'psi' | 'bar';
+  };
+  defaultValues: {
+    batchSize: number;
+    efficiency: number;
+    boilTime: number;
+    fermentationTemp: number;
+  };
+  display: {
+    theme: 'light' | 'dark' | 'auto';
+    compactMode: boolean;
+    showAdvancedCalculators: boolean;
+    defaultTab: 'brewing' | 'distillation' | 'water';
+  };
+  notifications: {
+    calculationReminders: boolean;
+    tipOfTheDay: boolean;
+    updateNotifications: boolean;
+  };
+  privacy: {
+    saveCalculationHistory: boolean;
+    shareUsageData: boolean;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 class AuthDatabase {
   private STORAGE_KEY = 'brewing_calc_users';
+  private SETTINGS_KEY = 'brewing_calc_settings';
   private SESSION_KEY = 'brewing_calc_session';
 
   constructor() {
     this.initializeDatabase();
+    this.initializeSettings();
     this.createDemoAccount();
   }
 
@@ -30,6 +66,12 @@ class AuthDatabase {
     }
   }
 
+  private initializeSettings() {
+    if (!localStorage.getItem(this.SETTINGS_KEY)) {
+      localStorage.setItem(this.SETTINGS_KEY, JSON.stringify([]));
+    }
+  }
+
   private getUsers(): User[] {
     const users = localStorage.getItem(this.STORAGE_KEY);
     return users ? JSON.parse(users) : [];
@@ -37,6 +79,15 @@ class AuthDatabase {
 
   private saveUsers(users: User[]) {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(users));
+  }
+
+  private getSettings(): UserSettings[] {
+    const settings = localStorage.getItem(this.SETTINGS_KEY);
+    return settings ? JSON.parse(settings) : [];
+  }
+
+  private saveSettings(settings: UserSettings[]) {
+    localStorage.setItem(this.SETTINGS_KEY, JSON.stringify(settings));
   }
 
   private hashPassword(password: string): string {
@@ -188,6 +239,94 @@ class AuthDatabase {
       return users.find(user => user.id === id) || null;
     } catch (error) {
       return null;
+    }
+  }
+
+  // Settings management methods
+  getUserSettings(userId: number): UserSettings | null {
+    try {
+      const allSettings = this.getSettings();
+      return allSettings.find(settings => settings.userId === userId) || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  createUserSettings(userId: number, settings: Partial<UserSettings>): UserSettings {
+    const allSettings = this.getSettings();
+    
+    const defaultSettings: UserSettings = {
+      id: Date.now().toString(),
+      userId,
+      units: {
+        volume: 'liters',
+        weight: 'grams',
+        temperature: 'celsius',
+        pressure: 'psi'
+      },
+      defaultValues: {
+        batchSize: 20,
+        efficiency: 75,
+        boilTime: 60,
+        fermentationTemp: 20
+      },
+      display: {
+        theme: 'light',
+        compactMode: false,
+        showAdvancedCalculators: true,
+        defaultTab: 'brewing'
+      },
+      notifications: {
+        calculationReminders: true,
+        tipOfTheDay: true,
+        updateNotifications: true
+      },
+      privacy: {
+        saveCalculationHistory: true,
+        shareUsageData: false
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...settings
+    };
+
+    allSettings.push(defaultSettings);
+    this.saveSettings(allSettings);
+    return defaultSettings;
+  }
+
+  updateUserSettings(userId: number, updates: Partial<UserSettings>): UserSettings | null {
+    try {
+      const allSettings = this.getSettings();
+      const settingsIndex = allSettings.findIndex(settings => settings.userId === userId);
+      
+      if (settingsIndex === -1) {
+        // Create new settings if they don't exist
+        return this.createUserSettings(userId, updates);
+      }
+
+      // Update existing settings
+      allSettings[settingsIndex] = {
+        ...allSettings[settingsIndex],
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+
+      this.saveSettings(allSettings);
+      return allSettings[settingsIndex];
+    } catch (error) {
+      return null;
+    }
+  }
+
+  deleteUserSettings(userId: number): boolean {
+    try {
+      const allSettings = this.getSettings();
+      const filteredSettings = allSettings.filter(settings => settings.userId !== userId);
+      this.saveSettings(filteredSettings);
+      return true;
+    } catch (error) {
+      return false;
     }
   }
 }

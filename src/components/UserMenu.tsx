@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import SettingsModal from './settings/SettingsModal';
 
 function UserMenu() {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   if (!user) return null;
 
@@ -44,7 +46,7 @@ function UserMenu() {
             <button
               onClick={() => {
                 setIsOpen(false);
-                // Future: Add settings functionality
+                setShowSettings(true);
               }}
               className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
             >
@@ -65,6 +67,11 @@ function UserMenu() {
           </div>
         </>
       )}
+      
+      <SettingsModal 
+        isOpen={showSettings} 
+        onClose={() => setShowSettings(false)} 
+      />
     </div>
   );
 }
