@@ -1,29 +1,56 @@
 import React, { useState } from 'react';
 import { Calculator, Beaker, FlaskConical, Droplet } from 'lucide-react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import AuthScreen from './components/auth/AuthScreen';
+import UserMenu from './components/UserMenu';
 import BrewingCalculators from './components/BrewingCalculators';
 import DistillationCalculators from './components/DistillationCalculators';
 import WaterChemistryCalculators from './components/WaterChemistryCalculators';
 
 type TabType = 'brewing' | 'distillation' | 'water';
 
-function App() {
+function AppContent() {
+  const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('brewing');
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <Calculator className="w-16 h-16 text-amber-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-lg text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Calculator className="w-8 h-8 text-amber-600 mr-3" />
-            <h1 className="text-4xl font-bold text-gray-800">
-              Brewing & Distillation Calculators
-            </h1>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center">
+            <div className="flex items-center mb-4">
+              <Calculator className="w-8 h-8 text-amber-600 mr-3" />
+              <h1 className="text-4xl font-bold text-gray-800">
+                Brewing & Distillation Calculators
+              </h1>
+            </div>
           </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Professional calculation tools for brewers and distillers. 
-            Accurate, reliable, and easy to use.
-          </p>
+          <UserMenu />
+        </div>
+        
+        <div className="text-center mb-8">
+          <div className="max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600">
+              Professional calculation tools for brewers and distillers. 
+              Accurate, reliable, and easy to use.
+            </p>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -75,6 +102,14 @@ function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
