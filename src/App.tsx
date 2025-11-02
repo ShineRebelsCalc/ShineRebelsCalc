@@ -13,6 +13,13 @@ function AppContent() {
   const { user, settings, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>(settings?.display?.defaultTab || 'brewing');
 
+  // Update active tab when settings change - must be at top level before any returns
+  React.useEffect(() => {
+    if (settings?.display?.defaultTab && activeTab !== settings.display.defaultTab) {
+      setActiveTab(settings.display.defaultTab);
+    }
+  }, [settings?.display?.defaultTab, activeTab]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
@@ -27,13 +34,6 @@ function AppContent() {
   if (!user) {
     return <AuthScreen />;
   }
-
-  // Update active tab when settings change
-  React.useEffect(() => {
-    if (settings?.display?.defaultTab && activeTab !== settings.display.defaultTab) {
-      setActiveTab(settings.display.defaultTab);
-    }
-  }, [settings?.display?.defaultTab]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
